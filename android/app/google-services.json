@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "995921357859",
+    "project_id": "gold-order-155814",
+    "storage_bucket": "gold-order-155814.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:995921357859:android:fec79154ffef35874e1596",
+        "android_client_info": {
+          "package_name": "com.reactchat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "995921357859-6h2up3thiijjsne3pl0t2ffl5dqlk4hd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.reactchat",
+            "certificate_hash": "0aa9949b47fa37662d582ab584ae40988466cc87"
+          }
+        },
+        {
+          "client_id": "995921357859-bmen76e1rhoanunqkf8n2mde9sbm30kb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1aqlRg4j4Vx2Na0QklKcsskt5_tVa56c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "995921357859-654job2619ua8af2ii9vionk078pnmdq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
