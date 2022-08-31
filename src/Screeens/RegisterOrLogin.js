@@ -6,133 +6,278 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  KeyboardAvoidingView,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import React, {useState} from 'react';
 import firestore from '@react-native-firebase/firestore';
+import {useDispatch} from 'react-redux';
+import {userLogin} from '../redux/reducers/authSlice';
 
 import googlePlus from '../assets/images/google-plus.png';
-import fb from '../assets/images/fb.png';
 
-const RegisterOrLogin = () => {
+const RegisterOrLogin = ({navigation}) => {
   const [haveAccount, setHaveAccount] = useState(false);
   const [fullName, setfullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirPassword, setConfirmPassword] = useState('');
+  const [loader, setLoader] = useState(false);
 
-  const hittoUsers = () => {
+  const dispatch = useDispatch();
+
+  const hittoUsers = uid => {
     let input = {
       email: email,
       name: fullName,
       password: password,
-      userId: Date.now() + Math.floor(Math.random() * 10000),
+      userId: uid,
       createdAt: Date.now(),
-      avatar:
-        'https://store.playstation.com/store/api/chihiro/00_09_000/container/BG/en/99/EP2402-CUSA05624_00-AV00000000000237/0/image?_version=00_09_000&platform=chihiro&bg_color=000000&opacity=100&w=720&h=720',
+      location: null,
+      phoneNumber: null,
+      nickname: null,
+      status: null,
+      gender: null,
+      country: null,
+      city: null,
+      bio: null,
+      avatar: null,
     };
 
     firestore()
       .collection('users')
-      .add(input)
+      .doc(auth().currentUser.uid)
+      .set(input)
       .then(res => {
-        alert('Register Successfully');
+        setLoader(false);
+        setHaveAccount(false);
       })
-      .catch(err => console.log(err));
+      .catch(err => {
+        console.log(err);
+        setLoader(false);
+      });
   };
 
   const register = () => {
-    if (!email || !password || !fullName) {
-      alert('Please filled first.');
+    if (password !== confirPassword) {
+      return alert('Password or Confirm Password did not match.');
     } else {
-      auth()
-        .createUserWithEmailAndPassword(email, password)
-        .then(() => {
-          hittoUsers();
-          setHaveAccount(false);
-        })
-        .catch(err => console.log(err));
+      if (!email || !password || !fullName) {
+        alert('Please filled first.');
+      } else {
+        setLoader(true);
+        auth()
+          .createUserWithEmailAndPassword(email, password)
+          .then(() => {
+            let uid = auth().currentUser.uid;
+            hittoUsers(uid);
+          })
+          .catch(err => {
+            console.log(err);
+            alert(err);
+            setLoader(false);
+          });
+      }
     }
   };
 
+  const login = () => {
+    if (!email || !password) {
+      return alert('Please filled first');
+    }
+    setLoader(true);
+    auth()
+      .signInWithEmailAndPassword(email, password)
+      .then(res => {
+        firestore()
+          .collection('users')
+          .where('userId', '==', auth().currentUser.uid)
+          .get()
+          .then(res => {
+            if (res.docs.length) {
+              const _data = res.docs.map(i => i.data().nickname);
+              if (_data[0] != null) {
+                const datas = res.docs.map(i => i.data());
+                let user = {
+                  currentUser: auth().currentUser,
+                  data: datas,
+                };
+                dispatch(userLogin(user));
+
+                navigation.navigate('myTabs', {
+                  screen: 'Chat',
+                  initial: false,
+                });
+                setLoader(false);
+              } else {
+                let user = {
+                  currentUser: auth().currentUser,
+                  data: [],
+                };
+                dispatch(userLogin(user));
+                setLoader(false);
+                navigation.navigate('UserIntro');
+              }
+            }
+          })
+          .catch(err => {
+            console.log(err);
+            setLoader(false);
+          });
+      })
+      .catch(err => {
+        alert(err);
+        setLoader(false);
+        console.log(err);
+      });
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.loginText}>Login NOW</Text>
-      <View style={styles.loginWrap}>
-        <View style={styles.inputWrapp}>
-          <Text style={styles.label}>Email:</Text>
-          <TextInput
-            placeholder="Enter Email..."
-            style={styles.input}
-            value={email}
-            onChangeText={text => setEmail(text)}
-          />
-        </View>
-        <View style={styles.inputWrapp}>
-          <Text style={styles.label}>Password:</Text>
-          <TextInput
-            secureTextEntry={true}
-            placeholder="Enter Password..."
-            value={password}
-            onChangeText={text => setPassword(text)}
-            style={styles.input}
-          />
-        </View>
-        {haveAccount && (
-          <View style={styles.inputWrapp}>
-            <Text style={styles.label}>Full Name:</Text>
-            <TextInput
-              placeholder="Enter Full Name..."
-              style={styles.input}
-              value={fullName}
-              onChangeText={text => setfullName(text)}
-            />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : null}
+      style={{flex: 1}}>
+      <ScrollView contentContainerStyle={{flexGrow: 1}}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <Text style={styles.loginText}>
+              {!haveAccount ? 'Login NOW' : 'Signup Now'}
+            </Text>
+            <View style={styles.loginWrap}>
+              {haveAccount && (
+                <View style={styles.inputWrapp}>
+                  <Text style={styles.label}>Full Name:</Text>
+                  <TextInput
+                    placeholder="Enter Full Name..."
+                    style={styles.input}
+                    value={fullName}
+                    onChangeText={text => setfullName(text)}
+                  />
+                </View>
+              )}
+              <View style={styles.inputWrapp}>
+                <Text style={styles.label}>Email:</Text>
+                <TextInput
+                  placeholder="Enter Email..."
+                  style={styles.input}
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={text => setEmail(text)}
+                />
+              </View>
+              <View style={styles.inputWrapp}>
+                <Text style={styles.label}>Password:</Text>
+                <TextInput
+                  secureTextEntry={true}
+                  placeholder="Enter Password..."
+                  value={password}
+                  onChangeText={text => setPassword(text)}
+                  style={styles.input}
+                />
+              </View>
+
+              {haveAccount && (
+                <View style={styles.inputWrapp}>
+                  <Text style={styles.label}>Confirm Password:</Text>
+                  <TextInput
+                    placeholder="Enter Full Name..."
+                    secureTextEntry={true}
+                    style={styles.input}
+                    value={confirPassword}
+                    onChangeText={text => setConfirmPassword(text)}
+                  />
+                </View>
+              )}
+
+              <View style={styles.socialLogin}>
+                <TouchableOpacity
+                  style={[styles.googleWrap, {borderColor: '#dd4d3f'}]}>
+                  <View style={styles.socialRow}>
+                    <Image
+                      source={googlePlus}
+                      style={{
+                        width: 35,
+                        height: 30,
+                        backgroundColor: '#fff',
+                      }}
+                      resizeMode="contain"
+                    />
+                    <Text
+                      style={{
+                        fontFamily: 'TitilliumWeb-SemiBold',
+                        fontSize: 16,
+                        marginLeft: 8,
+                      }}>
+                      Sign up with Google
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.googleWrap,
+                    {borderColor: '#3c5a98', marginTop: 13},
+                  ]}>
+                  <View style={styles.socialRow}>
+                    <Image
+                      source={require('../assets/images/fb.png')}
+                      style={{
+                        width: 43,
+                        height: 43,
+                        marginLeft: 4,
+                        backgroundColor: '#fff',
+                      }}
+                      resizeMode="contain"
+                    />
+                    <Text
+                      style={{
+                        fontFamily: 'TitilliumWeb-SemiBold',
+                        fontSize: 16,
+                        marginLeft: 0,
+                      }}>
+                      Sign up with Facebook
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+              {!haveAccount ? (
+                <TouchableOpacity
+                  style={styles.btn}
+                  onPress={login}
+                  disabled={loader ? true : false}>
+                  <Text style={styles.btnTxt}>
+                    {loader ? (
+                      <ActivityIndicator size="small" color={'#fff'} />
+                    ) : (
+                      'Login'
+                    )}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={styles.btn} onPress={register}>
+                  <Text style={styles.btnTxt}>
+                    {loader ? (
+                      <ActivityIndicator size="small" color={'#fff'} />
+                    ) : (
+                      'Register'
+                    )}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={() => setHaveAccount(!haveAccount)}>
+                <Text style={styles.dhac}>
+                  {!haveAccount
+                    ? 'Do you have an account? Register'
+                    : 'I have an account? Login'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
-        <View style={styles.socialLogin}>
-          <TouchableOpacity
-            style={[
-              styles.googleWrap,
-              {borderColor: '#dd4d3f', marginRight: 15},
-            ]}>
-            <Image
-              source={googlePlus}
-              style={{
-                width: 35,
-                height: 30,
-              }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.googleWrap, {borderColor: '#3A65C3'}]}>
-            <Image
-              source={fb}
-              style={{
-                width: 35,
-                height: 30,
-              }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        </View>
-        {!haveAccount ? (
-          <TouchableOpacity style={styles.btn} >
-            <Text style={styles.btnTxt}>Login</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.btn} onPress={register}>
-            <Text style={styles.btnTxt}>Register</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity onPress={() => setHaveAccount(!haveAccount)}>
-          <Text style={styles.dhac}>
-            {!haveAccount
-              ? 'Do you have an account? Register'
-              : 'I have an account? Login'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+        </TouchableWithoutFeedback>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -142,6 +287,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop: StatusBar.currentHeight,
     paddingHorizontal: 25,
+    paddingBottom: 30,
   },
   loginText: {
     fontFamily: 'TitilliumWeb-Bold',
@@ -154,7 +300,7 @@ const styles = StyleSheet.create({
   loginWrap: {
     flex: 1,
     paddingHorizontal: 20,
-    marginTop: '25%',
+    marginTop: '13%',
   },
   input: {
     borderWidth: 1,
@@ -182,23 +328,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'TitilliumWeb-Regular',
     fontSize: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   socialLogin: {
     marginBottom: 25,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   googleWrap: {
-    borderWidth: 3,
-    borderRadius: 55,
-    paddingHorizontal: 3,
-    paddingVertical: 4,
+    borderWidth: 1,
+    borderRadius: 5,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    // paddingVertical: 6,
   },
   dhac: {
     textAlign: 'center',
     fontFamily: 'TitilliumWeb-SemiBold',
     marginTop: 6,
+  },
+  socialRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

@@ -9,28 +9,36 @@ import {
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import firestore from '@react-native-firebase/firestore';
+import {useSelector} from 'react-redux';
+import fonts from '../constant/fonts';
+
 import search from '../assets/images/search.png';
+import colors from '../constant/colors';
 
 const Chat = ({navigation}) => {
   const [users, setUsers] = useState([]);
+  const auth = useSelector(state => state.auth.auhtUSer);
+  const uid = auth?.currentUser?.uid || 3222;
 
   useEffect(() => {
     firestore()
       .collection('users')
-      .where('userId', '!=', '2')
+      .where('userId', '!=', uid)
       .get()
       .then(res => {
         let data = res.docs.map(i => i.data());
         setUsers(data);
       })
       .catch(err => console.log(err));
-  }, []);
+  }, [users]);
 
   const renderItem = ({item, index}) => (
     <TouchableOpacity
       style={styles.row}
       key={index}
-      onPress={() => navigation.navigate('Message', {data: item})}>
+      onPress={() => {
+        navigation.navigate('Message', {data: item});
+      }}>
       <View style={styles.avatar}>
         <Image
           source={{uri: item?.avatar}}
@@ -52,11 +60,12 @@ const Chat = ({navigation}) => {
         <View style={styles.searchWrapp}>
           <Image source={search} style={styles.searchIcon} />
         </View>
+        <View style={styles.line}></View>
       </View>
       <FlatList
         data={users}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(_, ind) => ind}
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -74,12 +83,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 5,
-    padding: 10,
+    paddingVertical: 10,
     borderRadius: 10,
   },
   avatar: {
-    width: 65,
-    height: 65,
+    width: 62,
+    height: 62,
     borderWidth: 2,
     borderRadius: 55,
     borderColor: '#0ba70b',
@@ -93,6 +102,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 25,
+    position: 'relative',
+  },
+  line: {
+    position: 'absolute',
+    bottom: -20,
+    borderWidth: 0.5,
+    borderBottomColor: "#ddd",
+    opacity: 0.7,
+    width: '120%',
+    marginHorizontal: -20,
   },
   headTxt: {
     fontSize: 18,
@@ -108,10 +127,10 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   nameText: {
-    fontSize: 20,
+    fontSize: 19,
     textTransform: 'capitalize',
     color: '#4c4c4c',
-    fontFamily: 'TitilliumWeb-SemiBold',
+    fontFamily: fonts.regular,
   },
   avatrIcon: {
     width: '100%',
@@ -119,7 +138,7 @@ const styles = StyleSheet.create({
     borderRadius: 55,
   },
   slogan: {
-    fontFamily: 'TitilliumWeb-Regular',
+    fontFamily: fonts.regular,
     fontSize: 12.5,
   },
 });

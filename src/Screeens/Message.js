@@ -1,201 +1,183 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  StatusBar,
-  TextInput,
-  Button,
-  ScrollView,
-  Keyboard,
-  FlatList,
-  KeyboardAvoidingView,
-  Dimensions,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Keyboard, Text, View} from 'react-native';
+import {Bubble, GiftedChat} from 'react-native-gifted-chat';
 import firestore from '@react-native-firebase/firestore';
-import React, {useEffect, useState} from 'react';
-import sent from '../assets/images/sent.png';
+import {useSelector} from 'react-redux';
 
 const Message = ({route}) => {
   const {data} = route.params;
   const {username} = route.params;
-  console.log(data);
-  const currnetId = '2';
+  const auth = useSelector(state => state.auth.auhtUSer);
+  const currnetId = auth.currentUser.uid;
 
-  const [text, setText] = useState('');
   const [messages, setMessages] = useState([]);
-  const [loader, setLoader] = useState(false);
   const [room, setRoom] = useState(currnetId + '-' + data?.userId);
+  const [onSendRoom, setOnSendRoom] = useState(null);
+  const [lastVisible, setLastVisible] = useState(null);
+  const [isLoadingMsg, setIsLoadingMsg] = useState(false);
+  const [showFooter, setShowFooter] = useState(false);
 
-  const getAllMessages = roomId => {
+  const getAllMessageListner = roomId => {
+    setIsLoadingMsg(true);
     firestore()
       .collection('messages')
       .doc(roomId)
       .collection('chat')
-      .orderBy('createdAt', 'asc')
+      .orderBy('createdAt', 'desc')
+      .limit(15)
       .onSnapshot(res => {
+        setLastVisible(res.docs[res.docs.length - 1]);
         let message = [];
         if (res.docs.length) {
           res.forEach(doc => {
-            message.push(doc.data());
+            message.push({
+              ...doc.data(),
+              createdAt: Date.now(),
+            });
           });
         }
+        if (!res.docs.length) {
+          setIsLoadingMsg(false);
+          setShowFooter(true);
+        }
+
         if (message.length < 1) {
           setRoom(data?.userId + '-' + currnetId);
+          setOnSendRoom(data?.userId + '-' + currnetId);
         }
+
         setMessages(message);
       });
   };
 
   useEffect(() => {
-    getAllMessages(room);
+    getAllMessageListner(room);
     username(data?.name);
   }, [room]);
 
-  const sendMessage = () => {
-    if (!text) return;
-    setLoader(true);
-    const d = new Date();
-    let createAt = d.toISOString();
-    let input = {
-      text: text,
-      userId: currnetId,
-      createdAt: Date.now(createAt),
-    };
+  //load more messgaes
+
+  const loadMoreMessgaes = () => {
     firestore()
       .collection('messages')
       .doc(room)
       .collection('chat')
-      .add(input)
-      .then(res => {
-        setLoader(false);
-        getAllMessages(room);
-        setText('');
-        Keyboard.dismiss();
-      })
-      .catch(err => {
-        console.log(err);
-        alert(err);
-        setLoader(false);
+      .orderBy('createdAt', 'desc')
+      .startAfter(lastVisible || 111)
+      .limit(15)
+      .onSnapshot(res => {
+        setLastVisible(res.docs[res.docs.length - 1]);
+        let message = [...messages];
+        if (res.docs.length) {
+          res.forEach(doc => {
+            message.push({
+              ...doc.data(),
+              createdAt: Date.now(),
+            });
+          });
+        } else {
+          setIsLoadingMsg(false);
+        }
+        setMessages(message);
       });
   };
 
-  function formatAMPM(date) {
-    var hours = date.getHours();
-    var minutes = date.getMinutes();
-    var ampm = hours >= 12 ? 'pm' : 'am';
-    hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
-    minutes = minutes < 10 ? '0' + minutes : minutes;
-    var strTime = hours + ':' + minutes + ' ' + ampm;
-    return strTime;
-  }
+  const onSend = (messages = []) => {
+    setMessages(previousMessages =>
+      GiftedChat.append(previousMessages, messages),
+    );
+    let msg = messages[0];
+    let roomId = onSendRoom === null ? room : onSendRoom;
+    (msg.user.avatar = auth.data[0].avatar),
+      firestore()
+        .collection('messages')
+        .doc(roomId)
+        .collection('chat')
+        .add(messages[0])
+        .then(res => {
+          console.log('send');
+          setIsLoadingMsg(true);
+          // Keyboard.dismiss();
+        })
+        .catch(err => {
+          console.log(err);
+        });
+  };
 
-  const renderItem = ({item}) => (
-    <>
+  // const onSend = useCallback((messages = []) => {
+
+  //   setMessages(previousMessages =>
+  //     GiftedChat.append(previousMessages, messages),
+  //   );
+  //   let msg = messages[0];
+  //   (msg.user.avatar = auth.data[0].avatar),
+  //     firestore()
+  //       .collection('messages')
+  //       .doc(room)
+  //       .collection('chat')
+  //       .add(messages[0])
+  //       .then(res => {
+  //         console.log('send');
+  //         Keyboard.dismiss();
+  //       })
+  //       .catch(err => {
+  //         console.log(err);
+  //       });
+  // }, []);
+
+  const chatNowText = () => {
+    return (
       <View
         style={{
-          alignSelf: item.userId == currnetId ? 'flex-end' : 'flex-start',
-          marginBottom: 15,
+          alignItems: 'center',
+          flex: 1,
+          display: showFooter ? 'flex' : 'none',
         }}>
-        <View
-          style={{
-            backgroundColor: item.userId == currnetId ? '#f6f6f6' : '#f7d8d7',
-            paddingVertical: 10,
-            paddingHorizontal: 15,
-            borderRadius: 15,
-            overflow: 'hidden',
-            maxWidth: Dimensions.get('window').width * 0.6,
-          }}>
-          <Text
-            style={{
-              color: item.userId == currnetId ? '#000' : '#a29691',
-              fontWeight: '600',
-            }}>
-            {item?.text}
-          </Text>
-        </View>
+        <Text style={{fontWeight: 'bold', fontSize: 15}}>{data?.name}</Text>
         <Text
           style={{
-            fontSize: 11,
-            fontWeight: '500',
-            color: '#bba6a3',
-            textAlign: 'right',
-            paddingRight: 5,
+            textAlign: 'center',
+            marginBottom: 20,
+            fontSize: 14,
           }}>
-          {formatAMPM(new Date(item?.createdAt))}
+          Be the first one to send a message..
         </Text>
       </View>
-    </>
-  );
+    );
+  };
+
+  const renderBubble = props => {
+    return (
+      <Bubble
+        {...props}
+        wrapperStyle={{
+          right: {
+            backgroundColor: '#7986cb',
+            fontFamily: 'TitilliumWeb-Bold',
+          },
+          left: {
+            backgroundColor: '#fafafa',
+          },
+        }}
+      />
+    );
+  };
 
   return (
-    <KeyboardAvoidingView
-      enabled
-      behavior={Platform.OS === 'ios' ? 'padding' : null}
-      style={{flex: 1}}>
-      <View style={styles.container}>
-        <View style={{paddingHorizontal: 25, flex: 1, paddingBottom: 8}}>
-          <FlatList
-            data={messages}
-            renderItem={renderItem}
-            keyExtractor={item => item.id}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: 20,
-            paddingHorizontal: 25,
-            backgroundColor: '#f9f9f9',
-          }}>
-          <TextInput
-            placeholder="Type Message.."
-            onChangeText={text => setText(text)}
-            value={text}
-            style={{
-              borderRadius: 8,
-              width: '80%',
-              paddingHorizontal: 15,
-              marginRight: 20,
-              backgroundColor: '#fff',
-            }}
-          />
-          <TouchableOpacity
-            onPress={sendMessage}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 55,
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: '#fff',
-            }}>
-            {loader ? (
-              <Text>...</Text>
-            ) : (
-              <Image
-                source={sent}
-                style={{width: 20, height: 20, transform: [{rotate: '42deg'}]}}
-              />
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+    <GiftedChat
+      messages={messages}
+      showAvatarForEveryMessage={true}
+      loadEarlier={isLoadingMsg}
+      onLoadEarlier={loadMoreMessgaes}
+      renderFooter={chatNowText}
+      infiniteScroll={true}
+      renderBubble={renderBubble}
+      onSend={messages => onSend(messages)}
+      user={{
+        _id: currnetId,
+      }}
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: StatusBar.currentHeight,
-    backgroundColor: '#fff',
-  },
-});
 
 export default Message;
