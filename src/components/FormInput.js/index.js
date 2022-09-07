@@ -1,4 +1,4 @@
-import {View, Text, TextInput, StyleSheet} from 'react-native';
+import {View, Text, TextInput, StyleSheet, useColorScheme} from 'react-native';
 import React from 'react';
 import fonts from '../../constant/fonts';
 import colors from '../../constant/colors';
@@ -10,11 +10,15 @@ const FormInput = ({
   placeHolder,
   keyboardType,
   numberOfLines,
-  caretHidden
+  caretHidden,
 }) => {
+  const theme = useColorScheme();
   return (
     <View>
-      <Text style={styles.label}>{label}</Text>
+      <Text
+        style={[styles.label, {color: theme === 'dark' ? '#4c4c4c' : '#000'}]}>
+        {label}
+      </Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -39,10 +43,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    color: '#000',
+    // color: '#000',
     letterSpacing: 0.5,
     marginBottom: 8,
-    fontFamily: fonts.regular,
+    fontFamily: fonts.semiBold,
   },
 });
 

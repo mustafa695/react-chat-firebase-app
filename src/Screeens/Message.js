@@ -1,8 +1,9 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Keyboard, Text, View} from 'react-native';
-import {Bubble, GiftedChat} from 'react-native-gifted-chat';
+import {Keyboard, Text, View, useColorScheme} from 'react-native';
+import {Bubble, GiftedChat, InputToolbar} from 'react-native-gifted-chat';
 import firestore from '@react-native-firebase/firestore';
 import {useSelector} from 'react-redux';
+import colors from '../constant/colors';
 
 const Message = ({route}) => {
   const {data} = route.params;
@@ -16,6 +17,8 @@ const Message = ({route}) => {
   const [lastVisible, setLastVisible] = useState(null);
   const [isLoadingMsg, setIsLoadingMsg] = useState(false);
   const [showFooter, setShowFooter] = useState(false);
+
+  const theme = useColorScheme();
 
   const getAllMessageListner = roomId => {
     setIsLoadingMsg(true);
@@ -52,7 +55,7 @@ const Message = ({route}) => {
 
   useEffect(() => {
     getAllMessageListner(room);
-    username(data?.name);
+    username(data?.name.toUpperCase());
   }, [room]);
 
   //load more messgaes
@@ -97,7 +100,6 @@ const Message = ({route}) => {
         .then(res => {
           console.log('send');
           setIsLoadingMsg(true);
-          // Keyboard.dismiss();
         })
         .catch(err => {
           console.log(err);
@@ -163,20 +165,39 @@ const Message = ({route}) => {
     );
   };
 
+  const renderInputToolbar = props => {
+    //Add the extra styles via containerStyle
+    return (
+      <InputToolbar
+        {...props}
+        containerStyle={{
+          backgroundColor: theme === 'dark' ? colors.dark : colors.light,
+        }}
+      />
+    );
+  };
+
   return (
-    <GiftedChat
-      messages={messages}
-      showAvatarForEveryMessage={true}
-      loadEarlier={isLoadingMsg}
-      onLoadEarlier={loadMoreMessgaes}
-      renderFooter={chatNowText}
-      infiniteScroll={true}
-      renderBubble={renderBubble}
-      onSend={messages => onSend(messages)}
-      user={{
-        _id: currnetId,
-      }}
-    />
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme === 'dark' ? colors.dark : colors.light,
+      }}>
+      <GiftedChat
+        messages={messages}
+        showAvatarForEveryMessage={true}
+        loadEarlier={isLoadingMsg}
+        onLoadEarlier={loadMoreMessgaes}
+        renderFooter={chatNowText}
+        renderInputToolbar={renderInputToolbar}
+        infiniteScroll={true}
+        renderBubble={renderBubble}
+        onSend={messages => onSend(messages)}
+        user={{
+          _id: currnetId,
+        }}
+      />
+    </View>
   );
 };
 

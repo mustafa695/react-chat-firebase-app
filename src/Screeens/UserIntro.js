@@ -15,6 +15,7 @@ import storage from '@react-native-firebase/storage';
 import {useToast} from 'react-native-toast-notifications';
 import {useSelector, useDispatch} from 'react-redux';
 import Feather from 'react-native-vector-icons/Feather';
+
 import FormInput from '../components/FormInput.js';
 import fonts from '../constant/fonts.js';
 import colors from '../constant/colors.js';
@@ -70,7 +71,8 @@ const UserIntro = ({navigation}) => {
             };
             dispatch(userLogin(user));
             setLoader(false);
-            navigation.navigate('Chat');
+            console.log(navigation.navigate('myTabs'), '==========aaa');
+            navigation.navigate('myTabs');
           })
           .catch(err => {
             setLoader(false);

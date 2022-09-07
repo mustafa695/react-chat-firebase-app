@@ -11,6 +11,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import React, {useState} from 'react';
@@ -19,6 +20,7 @@ import {useDispatch} from 'react-redux';
 import {userLogin} from '../redux/reducers/authSlice';
 
 import googlePlus from '../assets/images/google-plus.png';
+import colors from '../constant/colors';
 
 const RegisterOrLogin = ({navigation}) => {
   const [haveAccount, setHaveAccount] = useState(false);
@@ -27,6 +29,7 @@ const RegisterOrLogin = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [confirPassword, setConfirmPassword] = useState('');
   const [loader, setLoader] = useState(false);
+  const theme = useColorScheme();
 
   const dispatch = useDispatch();
 
@@ -142,14 +145,24 @@ const RegisterOrLogin = ({navigation}) => {
       style={{flex: 1}}>
       <ScrollView contentContainerStyle={{flexGrow: 1}}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.container}>
-            <Text style={styles.loginText}>
+          <View
+            style={[
+              styles.container,
+              {backgroundColor: theme === 'dark' ? colors.dark : colors.light},
+            ]}>
+            <Text style={[styles.loginText, {color: theme === "dark" ? colors.borderDark : "#000"}]}>
               {!haveAccount ? 'Login NOW' : 'Signup Now'}
             </Text>
             <View style={styles.loginWrap}>
               {haveAccount && (
                 <View style={styles.inputWrapp}>
-                  <Text style={styles.label}>Full Name:</Text>
+                  <Text
+                    style={[
+                      styles.label,
+                      {color: theme === 'dark' ? colors.borderDark : '#000'},
+                    ]}>
+                    Full Name:
+                  </Text>
                   <TextInput
                     placeholder="Enter Full Name..."
                     style={styles.input}
@@ -159,7 +172,13 @@ const RegisterOrLogin = ({navigation}) => {
                 </View>
               )}
               <View style={styles.inputWrapp}>
-                <Text style={styles.label}>Email:</Text>
+                <Text
+                  style={[
+                    styles.label,
+                    {color: theme === 'dark' ? colors.borderDark : '#000'},
+                  ]}>
+                  Email:
+                </Text>
                 <TextInput
                   placeholder="Enter Email..."
                   style={styles.input}
@@ -169,7 +188,13 @@ const RegisterOrLogin = ({navigation}) => {
                 />
               </View>
               <View style={styles.inputWrapp}>
-                <Text style={styles.label}>Password:</Text>
+                <Text
+                  style={[
+                    styles.label,
+                    {color: theme === 'dark' ? colors.borderDark : '#000'},
+                  ]}>
+                  Password:
+                </Text>
                 <TextInput
                   secureTextEntry={true}
                   placeholder="Enter Password..."
@@ -181,7 +206,13 @@ const RegisterOrLogin = ({navigation}) => {
 
               {haveAccount && (
                 <View style={styles.inputWrapp}>
-                  <Text style={styles.label}>Confirm Password:</Text>
+                  <Text
+                    style={[
+                      styles.label,
+                      {color: theme === 'dark' ? colors.borderDark : '#000'},
+                    ]}>
+                    Confirm Password:
+                  </Text>
                   <TextInput
                     placeholder="Enter Full Name..."
                     secureTextEntry={true}
@@ -201,7 +232,8 @@ const RegisterOrLogin = ({navigation}) => {
                       style={{
                         width: 35,
                         height: 30,
-                        backgroundColor: '#fff',
+                        backgroundColor:
+                          theme === 'dark' ? colors.dark : colors.light,
                       }}
                       resizeMode="contain"
                     />
@@ -227,7 +259,8 @@ const RegisterOrLogin = ({navigation}) => {
                         width: 43,
                         height: 43,
                         marginLeft: 4,
-                        backgroundColor: '#fff',
+                        backgroundColor:
+                          theme === 'dark' ? colors.dark : colors.light,
                       }}
                       resizeMode="contain"
                     />
@@ -284,7 +317,7 @@ const RegisterOrLogin = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+
     paddingTop: StatusBar.currentHeight,
     paddingHorizontal: 25,
     paddingBottom: 30,
@@ -294,7 +327,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     textTransform: 'capitalize',
     textAlign: 'center',
-    color: '#000',
+    // color: '#000',
     marginTop: 25,
   },
   loginWrap: {
@@ -315,7 +348,7 @@ const styles = StyleSheet.create({
   label: {
     marginBottom: 5,
     fontFamily: 'TitilliumWeb-Regular',
-    color: '#000',
+    // color: '#000',
     letterSpacing: 0.5,
   },
   btn: {

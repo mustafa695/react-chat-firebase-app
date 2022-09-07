@@ -11,26 +11,31 @@ import RegisterOrLogin from '../../Screeens/RegisterOrLogin';
 import Setting from '../../Screeens/Setting';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import UserIntro from '../../Screeens/UserIntro';
-import FindPeople from '../../Screeens/FindPeople';
+import Feeds from '../../Screeens/Feeds';
+import colors from '../../constant/colors';
+import fonts from '../../constant/fonts';
+import {useColorScheme} from 'react-native';
+import EditProfile from '../../Screeens/EditProfile';
 
 const Stack = createNativeStackNavigator();
 
 const Tab = createBottomTabNavigator();
 
 function MyTabs() {
+  const theme = useColorScheme();
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
         tabBarStyle: {
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
           elevation: 2,
-          borderTopColor: '#ddd',
+          borderTopColor: theme === 'dark' ? colors.borderDark : '#ddd',
           height: 65,
           paddingTop: 10,
+          backgroundColor: theme === 'dark' ? colors.dark : colors.light,
         },
       }}>
       <Tab.Screen
@@ -39,7 +44,7 @@ function MyTabs() {
         options={{
           tabBarIcon: ({focused}) => (
             <Ionicons
-              color={focused ? '#7986cb' : '#000'}
+              color={focused ? '#7986cb' : theme === 'dark' ? '#4c4c4c' : '#000'}
               name="chatbubbles"
               size={22}
             />
@@ -50,15 +55,17 @@ function MyTabs() {
             paddingBottom: 10,
           },
           tabBarActiveTintColor: '#7986cb',
+          headerShown: false,
         }}
       />
       <Tab.Screen
         name="People"
-        component={FindPeople}
+        component={Feeds}
         options={{
+          headerShown: false,
           tabBarIcon: ({focused}) => (
             <Ionicons
-              color={focused ? '#7986cb' : '#000'}
+              color={focused ? '#7986cb' : theme === 'dark' ? '#4c4c4c' : '#000'}
               name="people"
               size={22}
             />
@@ -72,12 +79,12 @@ function MyTabs() {
         }}
       />
       <Tab.Screen
-        name="Setting"
+        name="Settings"
         component={Setting}
         options={{
           tabBarIcon: ({focused}) => (
             <Ionicons
-              color={focused ? '#7986cb' : '#000'}
+              color={focused ? '#7986cb' : theme === 'dark' ? '#4c4c4c' : '#000'}
               name="ios-settings"
               size={22}
             />
@@ -88,6 +95,14 @@ function MyTabs() {
             paddingBottom: 10,
           },
           tabBarActiveTintColor: '#7986cb',
+          headerStyle: {
+            backgroundColor: colors.chatColor,
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontFamily: fonts.regular,
+            color: '#fff',
+          },
         }}
       />
     </Tab.Navigator>
@@ -98,7 +113,6 @@ const Navigation = () => {
   const [chatUserName, setchatUserName] = useState('');
 
   const authSelector = useSelector(state => state.auth.auhtUSer);
-  console.log(authSelector, '------------navigation data');
 
   return (
     <NavigationContainer>
@@ -129,12 +143,27 @@ const Navigation = () => {
           component={Message}
           options={{
             title: chatUserName,
+            headerTintColor: '#fff',
+            headerStyle: {
+              backgroundColor: colors.chatColor,
+            },
+            headerTitleStyle: {
+              fontFamily: fonts.semiBold,
+            },
+            headerTitleAlign: 'center',
           }}
           initialParams={{username: setchatUserName}}
         />
         <Stack.Screen
           name="UserIntro"
           component={UserIntro}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="EditProfile"
+          component={EditProfile}
           options={{
             headerShown: false,
           }}
